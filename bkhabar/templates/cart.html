@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Cart – BKhabar{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page { max-width: 700px; margin: 2.5rem auto; padding: 0 1.5rem; }
+  h2 { font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:1.5rem; }
+  h2 span { color:var(--saffron); }
+
+  .empty-cart { text-align:center; padding:4rem 1rem; }
+  .empty-cart .icon { font-size:4rem; margin-bottom:1rem; }
+  .empty-cart p { color:#888; margin-bottom:1.5rem; font-size:1.1rem; }
+
+  .cart-item {
+    background:var(--white);
+    border-radius:14px;
+    padding:1rem 1.4rem;
+    display:flex;
+    align-items:center;
+    gap:1rem;
+    margin-bottom:.8rem;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+  }
+  .cart-item-emoji { font-size:2rem; width:48px; text-align:center; flex-shrink:0; }
+  .cart-item-info { flex:1; }
+  .cart-item-name { font-weight:700; font-size:1rem; }
+  .cart-item-name-bn { font-size:.8rem; color:var(--mid); }
+  .cart-item-price { color:var(--saffron); font-weight:700; margin-top:.2rem; }
+
+  .qty-ctrl { display:flex; align-items:center; gap:.6rem; }
+  .qty-ctrl button {
+    width:32px; height:32px; border-radius:50%;
+    border:2px solid var(--saffron);
+    background:transparent; color:var(--saffron);
+    font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s;
+  }
+  .qty-ctrl button:hover { background:var(--saffron); color:var(--white); }
+  .qty-ctrl .qty-num { font-weight:700; min-width:24px; text-align:center; }
+
+  .summary {
+    background:var(--white);
+    border-radius:16px;
+    padding:1.5rem;
+    margin-top:1.5rem;
+    box-shadow:0 2px 12px rgba(0,0,0,.07);
+  }
+  .summary-row {
+    display:flex; justify-content:space-between;
+    padding:.5rem 0; font-size:.95rem; color:var(--mid);
+  }
+  .summary-row.total {
+    border-top:2px solid var(--light);
+    margin-top:.5rem;
+    padding-top:.8rem;
+    font-size:1.15rem;
+    font-weight:700;
+    color:var(--dark);
+  }
+  .free-delivery { color:var(--green); font-size:.85rem; margin-top:.4rem; text-align:right; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h2>🛒 Your Cart <span>({{ cart|length }} items)</span></h2>
+
+  {% if not cart %}
+  <div class="empty-cart">
+    <div class="icon">🍽️</div>
+    <p>Your cart is empty!<br>আপনার কার্ট খালি আছে।</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Browse Menu</a>
+  </div>
+  {% else %}
+
+  <!-- Cart Items -->
+  {% for id, item in cart.items() %}
+  <div class="cart-item" id="item-{{ id }}">
+    <div class="cart-item-emoji">{{ item.emoji }}</div>
+    <div class="cart-item-info">
+      <div class="cart-item-name">{{ item.name }}</div>
+      <div class="cart-item-name-bn">{{ item.name_bn }}</div>
+      <div class="cart-item-price">৳{{ item.price|int }} × <span class="qty-display-{{ id }}">{{ item.qty }}</span> = ৳<span class="line-total-{{ id }}">{{ (item.price * item.qty)|int }}</span></div>
+    </div>
+    <div class="qty-ctrl">
+      <button onclick="changeQty('{{ id }}', {{ item.price }}, -1)">−</button>
+      <span class="qty-num qty-display-{{ id }}">{{ item.qty }}</span>
+      <button onclick="changeQty('{{ id }}', {{ item.price }}, +1)">+</button>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-row">
+      <span>Subtotal</span>
+      <span>৳<span id="subtotal">{{ total|int }}</span></span>
+    </div>
+    <div class="summary-row">
+      <span>Delivery Charge</span>
+      <span id="delivery-text">{% if total >= 500 %}FREE{% else %}৳60{% endif %}</span>
+    </div>
+    <div class="summary-row total">
+      <span>Total</span>
+      <span>৳<span id="grand-total">{% if total >= 500 %}{{ total|int }}{% else %}{{ (total + 60)|int }}{% endif %}</span></span>
+    </div>
+    {% if total < 500 %}
+    <p class="free-delivery">Add ৳{{ (500 - total)|int }} more for FREE delivery!</p>
+    {% endif %}
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-top:1.5rem; flex-wrap:wrap;">
+    <a href="{{ url_for('index') }}" class="btn btn-outline">← Continue Shopping</a>
+    <a href="{{ url_for('checkout') }}" class="btn btn-primary" style="flex:1">Proceed to Checkout →</a>
+  </div>
+
+  <button onclick="clearCart()" style="margin-top:.8rem; background:none; border:none; color:#c0392b; cursor:pointer; font-size:.9rem; text-decoration:underline;">
+    🗑️ Clear Cart
+  </button>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let qtys = {{ {id: item.qty for id, item in cart.items()}|tojson }};
+
+  async function changeQty(id, price, delta) {
+    qtys[id] = Math.max(0, (qtys[id] || 0) + delta);
+    const res = await fetch('/api/cart/update', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({id, qty: qtys[id]})
+    });
+    const data = await res.json();
+    updateCartBadge(data.cart_count);
+
+    if (qtys[id] === 0) {
+      document.getElementById('item-'+id).remove();
+    } else {
+      document.querySelectorAll('.qty-display-'+id).forEach(el => el.textContent = qtys[id]);
+      document.querySelector('.line-total-'+id).textContent = Math.round(price * qtys[id]);
+    }
+
+    // Update totals
+    document.getElementById('subtotal').textContent = Math.round(data.total);
+    const delivery = data.total >= 500 ? 0 : 60;
+    document.getElementById('delivery-text').textContent = delivery ? '৳60' : 'FREE';
+    document.getElementById('grand-total').textContent = Math.round(data.total + delivery);
+  }
+
+  async function clearCart() {
+    await fetch('/api/cart/clear', {method:'POST'});
+    location.reload();
+  }
+</script>
+{% endblock %}

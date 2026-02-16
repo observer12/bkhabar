@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}Checkout – BKhabar{% endblock %}
+
+{% block extra_head %}
+<style>
+  .checkout-wrap { max-width:900px; margin:2.5rem auto; padding:0 1.5rem; display:grid; grid-template-columns:1fr 340px; gap:2rem; }
+  @media(max-width:680px) { .checkout-wrap { grid-template-columns:1fr; } }
+
+  h2 { font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:1.5rem; }
+
+  .card { background:var(--white); border-radius:16px; padding:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:1.5rem; }
+  .card-title { font-weight:700; font-size:1.1rem; margin-bottom:1.2rem; padding-bottom:.5rem; border-bottom:2px solid var(--light); display:flex; align-items:center; gap:.5rem; }
+
+  .form-group { margin-bottom:1.1rem; }
+  label { display:block; font-size:.85rem; font-weight:600; color:var(--mid); margin-bottom:.35rem; }
+  input, select, textarea {
+    width:100%; padding:.75rem 1rem;
+    border:2px solid var(--light);
+    border-radius:10px;
+    font-family:'Hind Siliguri',sans-serif;
+    font-size:.95rem;
+    color:var(--dark);
+    transition:border .2s;
+    background:var(--cream);
+  }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--saffron); background:var(--white); }
+
+  /* ── PAYMENT METHODS ── */
+  .pay-methods { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+  .pay-option { position:relative; }
+  .pay-option input[type=radio] { position:absolute; opacity:0; width:0; height:0; }
+  .pay-label {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:1rem .75rem;
+    border:2px solid var(--light);
+    border-radius:12px;
+    cursor:pointer;
+    transition:all .2s;
+    text-align:center;
+    gap:.3rem;
+  }
+  .pay-label:hover { border-color:var(--saffron); background:var(--cream); }
+  .pay-option input:checked + .pay-label {
+    border-color:var(--saffron);
+    background:linear-gradient(135deg,#FFF5F0,#FFF);
+    box-shadow:0 4px 16px rgba(232,96,44,.15);
+  }
+  .pay-icon { font-size:2rem; }
+  .pay-name { font-weight:700; font-size:.9rem; color:var(--dark); }
+  .pay-sub { font-size:.75rem; color:var(--mid); }
+
+  /* ── ORDER SUMMARY ── */
+  .order-sum .item-row { display:flex; justify-content:space-between; padding:.45rem 0; font-size:.9rem; border-bottom:1px solid var(--light); }
+  .order-sum .item-row:last-of-type { border:none; }
+  .total-row { display:flex; justify-content:space-between; padding:.6rem 0; font-weight:700; font-size:1.05rem; border-top:2px solid var(--saffron); margin-top:.5rem; }
+  .delivery-row { display:flex; justify-content:space-between; padding:.4rem 0; font-size:.85rem; color:var(--mid); }
+
+  .place-btn { width:100%; padding:1rem; font-size:1.1rem; }
+
+  .guarantee { display:flex; gap:.5rem; align-items:center; font-size:.8rem; color:var(--mid); margin-top:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-wrap">
+  <!-- LEFT: FORM -->
+  <div>
+    <h2>📋 Checkout</h2>
+
+    <form method="POST" action="{{ url_for('place_order') }}" id="checkout-form">
+
+      <!-- Delivery Info -->
+      <div class="card">
+        <div class="card-title">🏠 Delivery Information</div>
+        <div class="form-group">
+          <label>Full Name / পূর্ণ নাম *</label>
+          <input type="text" name="name" placeholder="আপনার নাম লিখুন" required>
+        </div>
+        <div class="form-group">
+          <label>Mobile Number / মোবাইল নম্বর *</label>
+          <input type="tel" name="phone" placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" required>
+        </div>
+        <div class="form-group">
+          <label>Area / এলাকা *</label>
+          <select name="area" required>
+            <option value="">-- Select Area --</option>
+            {% for area in areas %}
+            <option>{{ area }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Full Address / সম্পূর্ণ ঠিকানা *</label>
+          <textarea name="address" rows="2" placeholder="House/Road/Block নম্বর লিখুন..." required></textarea>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="card">
+        <div class="card-title">💳 Payment Method</div>
+        <div class="pay-methods">
+
+          <div class="pay-option">
+            <input type="radio" name="payment" id="p-bkash" value="bkash" checked>
+            <label class="pay-label" for="p-bkash">
+              <span class="pay-icon">📱</span>
+              <span class="pay-name" style="color:#E2136E">bKash</span>
+              <span class="pay-sub">Mobile Banking</span>
+            </label>
+          </div>
+
+          <div class="pay-option">
+            <input type="radio" name="payment" id="p-nagad" value="nagad">
+            <label class="pay-label" for="p-nagad">
+              <span class="pay-icon">💜</span>
+              <span class="pay-name" style="color:#F05A24">Nagad</span>
+              <span class="pay-sub">Mobile Banking</span>
+            </label>
+          </div>
+
+          <div class="pay-option">
+            <input type="radio" name="payment" id="p-rocket" value="rocket">
+            <label class="pay-label" for="p-rocket">
+              <span class="pay-icon">🚀</span>
+              <span class="pay-name" style="color:#8B1F7E">Rocket</span>
+              <span class="pay-sub">DBBL Mobile</span>
+            </label>
+          </div>
+
+          <div class="pay-option">
+            <input type="radio" name="payment" id="p-card" value="card">
+            <label class="pay-label" for="p-card">
+              <span class="pay-icon">💳</span>
+              <span class="pay-name">Card</span>
+              <span class="pay-sub">Visa / MasterCard</span>
+            </label>
+          </div>
+
+          <div class="pay-option" style="grid-column:1/-1">
+            <input type="radio" name="payment" id="p-cod" value="cod">
+            <label class="pay-label" for="p-cod" style="flex-direction:row; justify-content:center; gap:.6rem;">
+              <span class="pay-icon">💵</span>
+              <span>
+                <span class="pay-name">Cash on Delivery</span>
+                <span class="pay-sub" style="display:block;">নগদ ডেলিভারিতে পরিশোধ</span>
+              </span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary place-btn">
+        🛵 Place Order Now
+      </button>
+      <div class="guarantee">🔒 Your information is secure and encrypted</div>
+    </form>
+  </div>
+
+  <!-- RIGHT: ORDER SUMMARY -->
+  <div>
+    <div class="card order-sum" style="position:sticky; top:80px;">
+      <div class="card-title">🧾 Order Summary</div>
+      {% for id, item in cart.items() %}
+      <div class="item-row">
+        <span>{{ item.emoji }} {{ item.name }} × {{ item.qty }}</span>
+        <span>৳{{ (item.price * item.qty)|int }}</span>
+      </div>
+      {% endfor %}
+      <div class="delivery-row">
+        <span>Delivery</span>
+        <span>{% if subtotal >= 500 %}<span style="color:var(--green)">FREE</span>{% else %}৳60{% endif %}</span>
+      </div>
+      <div class="total-row">
+        <span>Total</span>
+        <span>৳{% if subtotal >= 500 %}{{ subtotal|int }}{% else %}{{ (subtotal + 60)|int }}{% endif %}</span>
+      </div>
+      {% if subtotal < 500 %}
+      <p style="font-size:.8rem; color:var(--saffron); margin-top:.5rem; text-align:center;">
+        Add ৳{{ (500 - subtotal)|int }} more for FREE delivery!
+      </p>
+      {% endif %}
+      <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--light); font-size:.82rem; color:var(--mid); line-height:1.6;">
+        ⏱️ Estimated delivery: <strong>30-45 minutes</strong><br>
+        📞 Rider will call before delivery
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

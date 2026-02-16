@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Payment – BKhabar{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pay-page { max-width:480px; margin:3rem auto; padding:0 1.5rem; }
+
+  .pay-card {
+    background:var(--white);
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 8px 40px rgba(0,0,0,.12);
+  }
+
+  .pay-header { padding:2rem; text-align:center; }
+  .pay-logo { font-size:3.5rem; margin-bottom:.5rem; }
+  .pay-title { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; }
+  .pay-amount { font-size:2rem; font-weight:700; margin:.5rem 0; }
+  .pay-order { font-size:.85rem; color:rgba(255,255,255,.7); }
+
+  /* bKash colors */
+  .method-bkash .pay-header { background:linear-gradient(135deg,#E2136E,#A8005A); color:var(--white); }
+  /* Nagad */
+  .method-nagad .pay-header { background:linear-gradient(135deg,#F05A24,#C0411A); color:var(--white); }
+  /* Rocket */
+  .method-rocket .pay-header { background:linear-gradient(135deg,#8B1F7E,#5A0F52); color:var(--white); }
+  /* Card */
+  .method-card .pay-header { background:linear-gradient(135deg,#1A3A5C,#0D1F33); color:var(--white); }
+
+  .pay-body { padding:1.8rem; }
+
+  .info-box {
+    background:var(--cream);
+    border-radius:12px;
+    padding:1rem 1.2rem;
+    margin-bottom:1.2rem;
+    font-size:.9rem;
+    line-height:1.7;
+    border-left:4px solid var(--saffron);
+  }
+  .info-box strong { display:block; font-size:1rem; margin-bottom:.3rem; }
+  .merchant-num { font-size:1.3rem; font-weight:700; color:var(--saffron); letter-spacing:1px; }
+
+  .form-group { margin-bottom:1.1rem; }
+  label { display:block; font-size:.85rem; font-weight:600; color:var(--mid); margin-bottom:.35rem; }
+  input, select {
+    width:100%; padding:.75rem 1rem;
+    border:2px solid var(--light);
+    border-radius:10px;
+    font-family:'Hind Siliguri',sans-serif;
+    font-size:1rem;
+    color:var(--dark);
+    transition:border .2s;
+  }
+  input:focus { outline:none; border-color:var(--saffron); }
+
+  .steps { margin-bottom:1.2rem; }
+  .step { display:flex; gap:.7rem; align-items:flex-start; margin-bottom:.6rem; font-size:.88rem; line-height:1.5; }
+  .step-num { background:var(--saffron); color:var(--white); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; margin-top:.1rem; }
+
+  /* Card-specific */
+  .card-form input { letter-spacing:1px; }
+
+  .submit-btn { width:100%; padding:1rem; font-size:1.05rem; border-radius:12px; }
+
+  .security-note { text-align:center; font-size:.78rem; color:#888; margin-top:1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pay-page">
+  <div class="pay-card method-{{ method }}">
+
+    <div class="pay-header">
+      <div class="pay-logo">
+        {% if method == 'bkash' %}📱
+        {% elif method == 'nagad' %}💜
+        {% elif method == 'rocket' %}🚀
+        {% else %}💳
+        {% endif %}
+      </div>
+      <div class="pay-title">
+        {% if method == 'bkash' %}bKash Payment
+        {% elif method == 'nagad' %}Nagad Payment
+        {% elif method == 'rocket' %}Rocket Payment
+        {% else %}Card Payment
+        {% endif %}
+      </div>
+      <div class="pay-amount">৳{{ order.total|int }}</div>
+      <div class="pay-order">Order #{{ order.id }}</div>
+    </div>
+
+    <div class="pay-body">
+
+      {% if method in ['bkash', 'nagad', 'rocket'] %}
+      <!-- Mobile Banking Instructions -->
+      <div class="info-box">
+        <strong>📲 Send Money To:</strong>
+        <div class="merchant-num">01700-000000</div>
+        <span style="font-size:.8rem; color:var(--mid);">BKhabar (Merchant)</span>
+      </div>
+
+      <div class="steps">
+        {% if method == 'bkash' %}
+        <div class="step"><div class="step-num">1</div><span>Open bKash app → Send Money</span></div>
+        <div class="step"><div class="step-num">2</div><span>Enter number: <strong>01700-000000</strong></span></div>
+        <div class="step"><div class="step-num">3</div><span>Amount: <strong>৳{{ order.total|int }}</strong> → Reference: {{ order.id }}</span></div>
+        <div class="step"><div class="step-num">4</div><span>Enter your bKash PIN and confirm</span></div>
+        <div class="step"><div class="step-num">5</div><span>Copy the TrxID from SMS and paste below</span></div>
+        {% elif method == 'nagad' %}
+        <div class="step"><div class="step-num">1</div><span>Open Nagad app → Send Money</span></div>
+        <div class="step"><div class="step-num">2</div><span>Enter number: <strong>01700-000000</strong></span></div>
+        <div class="step"><div class="step-num">3</div><span>Amount: <strong>৳{{ order.total|int }}</strong> → Reference: {{ order.id }}</span></div>
+        <div class="step"><div class="step-num">4</div><span>Confirm with your Nagad PIN</span></div>
+        <div class="step"><div class="step-num">5</div><span>Paste the Transaction ID below</span></div>
+        {% else %}
+        <div class="step"><div class="step-num">1</div><span>Dial *322# or open Rocket app</span></div>
+        <div class="step"><div class="step-num">2</div><span>Send Money → <strong>01700-000000</strong></span></div>
+        <div class="step"><div class="step-num">3</div><span>Amount: <strong>৳{{ order.total|int }}</strong></span></div>
+        <div class="step"><div class="step-num">4</div><span>Paste TrxID from SMS below</span></div>
+        {% endif %}
+      </div>
+
+      <form method="POST" action="{{ url_for('confirm_payment', order_id=order.id) }}">
+        <input type="hidden" name="method" value="{{ method }}">
+        <div class="form-group">
+          <label>Transaction ID (TrxID) *</label>
+          <input type="text" name="txn_id" placeholder="e.g. 8X9Y2Z1A3B" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary submit-btn">✅ Confirm Payment</button>
+      </form>
+
+      {% else %}
+      <!-- Card Payment -->
+      <form method="POST" action="{{ url_for('confirm_payment', order_id=order.id) }}" class="card-form">
+        <input type="hidden" name="method" value="card">
+        <div class="form-group">
+          <label>Card Number</label>
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" name="card_number"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.8rem;">
+          <div class="form-group">
+            <label>Expiry Date</label>
+            <input type="text" placeholder="MM/YY" maxlength="5" name="expiry">
+          </div>
+          <div class="form-group">
+            <label>CVV</label>
+            <input type="text" placeholder="123" maxlength="4" name="cvv">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Card Holder Name</label>
+          <input type="text" placeholder="As on card" name="holder_name">
+        </div>
+        <!-- txn_id for confirm (simulate) -->
+        <input type="hidden" name="txn_id" value="CARD-{{ order.id }}-SIM">
+        <button type="submit" class="btn btn-primary submit-btn">💳 Pay ৳{{ order.total|int }}</button>
+      </form>
+      {% endif %}
+
+      <p class="security-note">🔒 256-bit SSL Encrypted &nbsp;|&nbsp; Your data is safe</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

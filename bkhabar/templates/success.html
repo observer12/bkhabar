@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Order Confirmed – BKhabar{% endblock %}
+
+{% block extra_head %}
+<style>
+  .success-page { max-width:600px; margin:3rem auto; padding:0 1.5rem; text-align:center; }
+
+  .confetti-box { font-size:4rem; margin-bottom:1rem; animation:bounce 1s ease-in-out infinite alternate; }
+  @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+
+  h1 { font-family:'Playfair Display',serif; font-size:2rem; color:var(--green); margin-bottom:.5rem; }
+  .subtitle { color:var(--mid); margin-bottom:2rem; font-size:1rem; }
+
+  .order-box {
+    background:var(--white);
+    border-radius:20px;
+    padding:2rem;
+    box-shadow:0 4px 24px rgba(0,0,0,.1);
+    margin-bottom:2rem;
+    text-align:left;
+  }
+
+  .order-id-block {
+    background:linear-gradient(135deg,var(--dark),#3D1A00);
+    color:var(--white);
+    border-radius:14px;
+    padding:1.2rem 1.5rem;
+    text-align:center;
+    margin-bottom:1.5rem;
+  }
+  .order-id-label { font-size:.8rem; opacity:.7; text-transform:uppercase; letter-spacing:1px; }
+  .order-id-num { font-family:'Playfair Display',serif; font-size:2.2rem; color:var(--gold); letter-spacing:4px; }
+
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem; }
+  .info-item label { display:block; font-size:.75rem; font-weight:600; color:var(--mid); text-transform:uppercase; margin-bottom:.2rem; }
+  .info-item span { font-weight:600; font-size:.95rem; }
+
+  .items-list { border-top:2px solid var(--light); padding-top:1rem; }
+  .items-title { font-weight:700; margin-bottom:.6rem; color:var(--mid); font-size:.85rem; text-transform:uppercase; }
+  .item-row { display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem; border-bottom:1px dashed var(--light); }
+  .total-row { display:flex; justify-content:space-between; font-weight:700; font-size:1.1rem; margin-top:.8rem; color:var(--saffron); }
+
+  .status-track {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:1.5rem 0;
+    position:relative;
+  }
+  .status-track::before {
+    content:'';
+    position:absolute;
+    top:50%;
+    left:10%;
+    right:10%;
+    height:3px;
+    background:var(--light);
+    z-index:0;
+  }
+  .status-step { display:flex; flex-direction:column; align-items:center; gap:.3rem; z-index:1; }
+  .status-icon {
+    width:44px; height:44px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem;
+    background:var(--light);
+    border:3px solid var(--light);
+    transition:all .3s;
+  }
+  .status-icon.active { background:var(--green); border-color:var(--green); }
+  .status-label { font-size:.7rem; color:var(--mid); text-align:center; font-weight:600; }
+
+  .payment-badge {
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.4rem 1rem; border-radius:50px; font-size:.85rem; font-weight:600;
+  }
+  .payment-badge.paid { background:#E8F5E9; color:var(--green); }
+  .payment-badge.pending { background:#FFF3E0; color:#E65100; }
+
+  .actions { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-page">
+  <div class="confetti-box">🎉</div>
+  <h1>Order Placed!</h1>
+  <p class="subtitle">আপনার অর্ডার সফলভাবে সম্পন্ন হয়েছে!<br>Your food is being prepared.</p>
+
+  <div class="order-box">
+    <div class="order-id-block">
+      <div class="order-id-label">Order ID</div>
+      <div class="order-id-num">#{{ order.id }}</div>
+      <div style="margin-top:.5rem; font-size:.8rem; opacity:.7;">{{ order.created_at }}</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <label>👤 Name</label>
+        <span>{{ order.name }}</span>
+      </div>
+      <div class="info-item">
+        <label>📞 Phone</label>
+        <span>{{ order.phone }}</span>
+      </div>
+      <div class="info-item" style="grid-column:1/-1">
+        <label>🏠 Delivery To</label>
+        <span>{{ order.address }}, {{ order.area }}</span>
+      </div>
+      <div class="info-item">
+        <label>💳 Payment</label>
+        <span style="text-transform:capitalize;">{{ order.payment_method }}</span>
+      </div>
+      <div class="info-item">
+        <label>Status</label>
+        <span class="payment-badge {{ 'paid' if order.payment_status == 'paid' else 'pending' }}">
+          {{ '✅ Paid' if order.payment_status == 'paid' else '⏳ Pending' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Order tracking bar -->
+    <div class="status-track">
+      <div class="status-step">
+        <div class="status-icon active">📋</div>
+        <div class="status-label">Order<br>Placed</div>
+      </div>
+      <div class="status-step">
+        <div class="status-icon {{ 'active' if order.order_status == 'confirmed' else '' }}">✅</div>
+        <div class="status-label">Confirmed</div>
+      </div>
+      <div class="status-step">
+        <div class="status-icon">🍳</div>
+        <div class="status-label">Preparing</div>
+      </div>
+      <div class="status-step">
+        <div class="status-icon">🛵</div>
+        <div class="status-label">On the<br>Way</div>
+      </div>
+      <div class="status-step">
+        <div class="status-icon">🏠</div>
+        <div class="status-label">Delivered</div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="items-list">
+      <div class="items-title">Items Ordered</div>
+      {% for item in order.items %}
+      <div class="item-row">
+        <span>{{ item.emoji }} {{ item.name }} × {{ item.qty }}</span>
+        <span>৳{{ (item.price * item.qty)|int }}</span>
+      </div>
+      {% endfor %}
+      {% if order.delivery > 0 %}
+      <div class="item-row"><span>Delivery Charge</span><span>৳{{ order.delivery|int }}</span></div>
+      {% endif %}
+      <div class="total-row">
+        <span>Total Paid</span>
+        <span>৳{{ order.total|int }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#E8F5E9; border-radius:14px; padding:1.2rem; margin-bottom:2rem; font-size:.9rem; color:var(--green);">
+    ⏱️ <strong>Estimated Delivery: 30–45 minutes</strong><br>
+    Our rider will call you before arriving at 📞 {{ order.phone }}
+  </div>
+
+  <div class="actions">
+    <a href="{{ url_for('index') }}" class="btn btn-outline">🍛 Order More</a>
+    <button onclick="shareOrder()" class="btn btn-primary">📤 Share Order</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function shareOrder() {
+  const text = `🍛 I just ordered from BKhabar!\nOrder ID: #{{ order.id }}\nTotal: ৳{{ order.total|int }}\n🛵 Coming in 30-45 mins!`;
+  if (navigator.share) {
+    navigator.share({ title: 'BKhabar Order', text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => alert('Order details copied!'));
+  }
+}
+</script>
+{% endblock %}

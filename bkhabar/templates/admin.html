@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard – BKhabar{% endblock %}
+{% block extra_head %}
+<style>
+  .admin-wrap { max-width:1100px; margin:2rem auto; padding:0 1.5rem; }
+  .admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+  h2 { font-family:'Playfair Display',serif; font-size:1.8rem; }
+
+  /* Stats cards */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--white); border-radius:14px; padding:1.2rem 1.4rem; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+  .stat-card .label { font-size:.8rem; color:var(--mid); font-weight:600; text-transform:uppercase; margin-bottom:.3rem; }
+  .stat-card .value { font-size:1.8rem; font-weight:700; color:var(--saffron); }
+
+  /* Orders table */
+  .orders-table { background:var(--white); border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+  table { width:100%; border-collapse:collapse; }
+  th { background:var(--dark); color:var(--white); padding:.8rem 1rem; font-size:.82rem; text-align:left; font-weight:600; }
+  td { padding:.8rem 1rem; font-size:.88rem; border-bottom:1px solid var(--light); vertical-align:top; }
+  tr:last-child td { border:none; }
+  tr:hover td { background:var(--cream); }
+
+  .order-id { font-family:monospace; font-weight:700; color:var(--saffron); }
+  .items-mini { font-size:.78rem; color:var(--mid); }
+  .status-badge { display:inline-block; padding:.25rem .75rem; border-radius:50px; font-size:.76rem; font-weight:700; }
+  .status-placed   { background:#FFF3E0; color:#E65100; }
+  .status-confirmed{ background:#E8F5E9; color:var(--green); }
+  .status-preparing{ background:#E3F2FD; color:#1565C0; }
+  .status-on_the_way { background:#F3E5F5; color:#6A1B9A; }
+  .status-delivered{ background:#E8F5E9; color:#1B5E20; }
+  .status-cancelled{ background:#FDECEA; color:#C62828; }
+
+  .pay-badge { display:inline-block; padding:.2rem .6rem; border-radius:50px; font-size:.75rem; font-weight:600; }
+  .pay-paid { background:#E8F5E9; color:var(--green); }
+  .pay-pending { background:#FFF3E0; color:#E65100; }
+
+  select.status-select {
+    padding:.3rem .6rem;
+    border:2px solid var(--light);
+    border-radius:8px;
+    font-size:.8rem;
+    cursor:pointer;
+  }
+  select.status-select:focus { outline:none; border-color:var(--saffron); }
+
+  @media(max-width:700px) { .orders-table { overflow-x:auto; display:block; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  <div class="admin-header">
+    <div>
+      <h2>📊 Admin Dashboard</h2>
+      <p style="color:var(--mid); font-size:.9rem;">Manage orders & track deliveries</p>
+    </div>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline" style="font-size:.9rem;">🔓 Logout</a>
+  </div>
+
+  <!-- Stats -->
+  {% set total_orders = orders|length %}
+  {% set total_rev = orders|sum(attribute='total') %}
+  {% set pending = orders|selectattr('order_status','eq','placed')|list|length %}
+  {% set delivered = orders|selectattr('order_status','eq','delivered')|list|length %}
+  <div class="stats">
+    <div class="stat-card"><div class="label">Total Orders</div><div class="value">{{ total_orders }}</div></div>
+    <div class="stat-card"><div class="label">Revenue (৳)</div><div class="value">{{ total_rev|int }}</div></div>
+    <div class="stat-card"><div class="label">Pending</div><div class="value" style="color:var(--saffron)">{{ pending }}</div></div>
+    <div class="stat-card"><div class="label">Delivered</div><div class="value" style="color:var(--green)">{{ delivered }}</div></div>
+  </div>
+
+  <!-- Orders -->
+  <div class="orders-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Order Status</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td><span class="order-id">#{{ order.id }}</span></td>
+          <td>
+            <strong>{{ order.name }}</strong><br>
+            <span style="font-size:.78rem; color:var(--mid);">📞 {{ order.phone }}<br>📍 {{ order.area }}</span>
+          </td>
+          <td>
+            {% for item in order.items[:3] %}
+            <div class="items-mini">{{ item.emoji }} {{ item.name }} ×{{ item.qty }}</div>
+            {% endfor %}
+            {% if order.items|length > 3 %}
+            <div class="items-mini" style="color:var(--saffron)">+{{ order.items|length - 3 }} more</div>
+            {% endif %}
+          </td>
+          <td><strong>৳{{ order.total|int }}</strong></td>
+          <td>
+            <span style="font-size:.8rem; text-transform:capitalize; font-weight:600;">{{ order.payment_method }}</span><br>
+            <span class="pay-badge {{ 'pay-paid' if order.payment_status == 'paid' else 'pay-pending' }}">
+              {{ '✅ Paid' if order.payment_status == 'paid' else '⏳ Pending' }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge status-{{ order.order_status }}">{{ order.order_status|replace('_',' ')|title }}</span><br>
+            <select class="status-select" onchange="updateStatus('{{ order.id }}', this.value)" style="margin-top:.4rem;">
+              {% for s in ['placed','confirmed','preparing','on_the_way','delivered','cancelled'] %}
+              <option value="{{ s }}" {{ 'selected' if order.order_status == s }}>{{ s|replace('_',' ')|title }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td style="font-size:.78rem; color:var(--mid);">{{ order.created_at }}</td>
+        </tr>
+        {% endfor %}
+        {% if not orders %}
+        <tr><td colspan="7" style="text-align:center; padding:3rem; color:var(--mid);">No orders yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function updateStatus(orderId, status) {
+  const res = await fetch('/admin/update-status', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({order_id: orderId, status})
+  });
+  const data = await res.json();
+  if (data.success) {
+    // Flash brief visual feedback
+    const row = document.querySelector(`[data-order="${orderId}"]`);
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}BKhabar - বাংলার স্বাদ{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --saffron:  #E8602C;
+    --deep:     #C0411A;
+    --green:    #1A6B3A;
+    --cream:    #FDF6EC;
+    --gold:     #D4A017;
+    --dark:     #1A0A00;
+    --mid:      #6B3A1F;
+    --light:    #F5E6D3;
+    --white:    #FFFFFF;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Hind Siliguri', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--dark);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    height: 64px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    text-decoration: none;
+  }
+
+  .nav-logo-icon {
+    font-size: 1.8rem;
+    animation: spin 8s linear infinite;
+  }
+
+  @keyframes spin {
+    0%,90%  { transform: rotate(0); }
+    95%     { transform: rotate(15deg); }
+    100%    { transform: rotate(0); }
+  }
+
+  .nav-logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -.5px;
+  }
+
+  .nav-logo-text span { color: var(--saffron); }
+
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+
+  .nav-links a {
+    color: rgba(255,255,255,.7);
+    text-decoration: none;
+    font-size: .9rem;
+    transition: color .2s;
+  }
+
+  .nav-links a:hover { color: var(--saffron); }
+
+  .cart-btn {
+    background: var(--saffron);
+    color: var(--white) !important;
+    padding: .5rem 1.2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    transition: background .2s, transform .15s !important;
+  }
+
+  .cart-btn:hover {
+    background: var(--deep) !important;
+    color: var(--white) !important;
+    transform: scale(1.04);
+  }
+
+  .cart-badge {
+    background: var(--gold);
+    color: var(--dark);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    font-weight: 700;
+  }
+
+  /* ── FLASH MESSAGES ── */
+  .flash {
+    padding: .9rem 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: .95rem;
+  }
+  .flash.error { background: #FDECEA; color: #c0392b; border-bottom: 2px solid #c0392b; }
+  .flash.success { background: #E8F5E9; color: #1A6B3A; border-bottom: 2px solid #1A6B3A; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--dark);
+    color: rgba(255,255,255,.5);
+    text-align: center;
+    padding: 1.5rem;
+    font-size: .85rem;
+    margin-top: 4rem;
+  }
+  footer strong { color: var(--saffron); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .75rem 1.8rem;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Hind Siliguri', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .2s;
+  }
+
+  .btn-primary {
+    background: var(--saffron);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: var(--deep); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--saffron);
+    border: 2px solid var(--saffron);
+  }
+  .btn-outline:hover { background: var(--saffron); color: var(--white); }
+
+  .btn-green {
+    background: var(--green);
+    color: var(--white);
+  }
+  .btn-green:hover { background: #154d2b; transform: translateY(-1px); }
+
+  /* ── UTILITY ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+  .text-center { text-align: center; }
+  .mt-1 { margin-top: .5rem; }
+  .mt-2 { margin-top: 1rem; }
+  .mt-3 { margin-top: 2rem; }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a href="{{ url_for('index') }}" class="nav-logo">
+    <span class="nav-logo-icon">🍛</span>
+    <span class="nav-logo-text">B<span>Khabar</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('index') }}">Menu</a>
+    <a href="{{ url_for('cart') }}" class="cart-btn" id="cart-link">
+      🛒 Cart
+      <span class="cart-badge" id="cart-count">{{ cart_count }}</span>
+    </a>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% for cat, msg in messages %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer>
+  <p>Made with ❤️ for Bangladesh &nbsp;|&nbsp; <strong>BKhabar</strong> &nbsp;|&nbsp; বাংলার স্বাদ ঘরে পৌঁছে দেই</p>
+  <p class="mt-1">📞 Hotline: 01700-000000 &nbsp;|&nbsp; 🕐 Delivery: 11am – 11pm</p>
+</footer>
+
+<script>
+  // Update cart badge without reload
+  function updateCartBadge(count) {
+    document.getElementById('cart-count').textContent = count;
+  }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
