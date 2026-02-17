@@ -15,6 +15,13 @@ import requests
 app = Flask(__name__)
 app.secret_key = 'bkhabar-secret-key-change-this-in-production'
 
+# Make cart_count available to all templates
+@app.context_processor
+def inject_cart_count():
+    cart = session.get('cart', {})
+    cart_count = sum(v['qty'] for v in cart.values())
+    return dict(cart_count=cart_count)
+
 # ─────────────────────────────────────────────
 #  DATABASE SETUP
 # ─────────────────────────────────────────────
@@ -130,17 +137,14 @@ def index():
             menu[cat] = []
         menu[cat].append(dict(item))
 
-    cart = session.get('cart', {})
-    cart_count = sum(v['qty'] for v in cart.values())
-    return render_template('index.html', menu=menu, cart_count=cart_count)
+    return render_template('index.html', menu=menu)
 
 
 @app.route('/cart')
 def cart():
     cart = session.get('cart', {})
-    cart_count = sum(v['qty'] for v in cart.values())
     total = sum(v['price'] * v['qty'] for v in cart.values())
-    return render_template('cart.html', cart=cart, total=total, cart_count=cart_count)
+    return render_template('cart.html', cart=cart, total=total)
 
 
 @app.route('/api/cart/add', methods=['POST'])
@@ -198,7 +202,6 @@ def checkout():
     if not cart:
         return redirect(url_for('index'))
     subtotal = sum(v['price'] * v['qty'] for v in cart.values())
-    cart_count = sum(v['qty'] for v in cart.values())
 
     areas = [
         'Dhanmondi', 'Gulshan', 'Banani', 'Mirpur', 'Uttara',
@@ -206,8 +209,7 @@ def checkout():
         'Wari', 'Rampura', 'Badda', 'Khilgaon', 'Jatrabari',
         'Demra', 'Shyamoli', 'Tejgaon'
     ]
-    return render_template('checkout.html', cart=cart, subtotal=subtotal,
-                           areas=areas, cart_count=cart_count)
+    return render_template('checkout.html', cart=cart, subtotal=subtotal, areas=areas)
 
 
 @app.route('/place-order', methods=['POST'])
@@ -306,8 +308,7 @@ def order_success(order_id):
         return redirect(url_for('index'))
     order = dict(order)
     order['items'] = json.loads(order['items'])
-    cart_count = 0
-    return render_template('success.html', order=order, cart_count=cart_count)
+    return render_template('success.html', order=order)
 
 
 @app.route('/track/<order_id>')
@@ -373,5 +374,3 @@ if __name__ == '__main__':
     print("🌐 Open: http://localhost:5000")
     print("🔐 Admin: http://localhost:5000/admin  (password: admin123)\n")
     app.run(debug=True, port=5000)
-
-dir
