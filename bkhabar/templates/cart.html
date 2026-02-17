@@ -124,7 +124,10 @@
 
 {% block scripts %}
 <script>
-  let qtys = {{ {id: item.qty for id, item in cart.items()}|tojson }};
+  let qtys = {};
+  {% for id, item in cart.items() %}
+  qtys['{{ id }}'] = {{ item.qty }};
+  {% endfor %}
 
   async function changeQty(id, price, delta) {
     qtys[id] = Math.max(0, (qtys[id] || 0) + delta);
